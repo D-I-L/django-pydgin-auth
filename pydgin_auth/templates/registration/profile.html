@@ -1,18 +1,14 @@
-{% extends "base.html" %}
+ {% extends basehtmldir|add:"base.html" %} 
 
 
 {% block content %}
 
-I am your profile :)
 <br/><br/>
 <strong>Username:</strong> {{ user }}
 <br/>
-<strong>Token:</strong>  {{ api_key}}
-<br/><br/>
-Try the Django REST framework link for pubs now!<br/>
-
-<a href='/rest/pubs/9358075/?format=json'>/rest/pubs/9358075/?format=json</a>
-
+<strong>Groups:</strong> {{ groups }}
+<br/>
+<strong>Token:</strong>  {{ api_key }}
 <br/><br/>
 <a id='logout_link' href="/accounts/logout">Logout ({{ user }})</a>
 {% endblock %}

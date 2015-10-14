@@ -15,52 +15,33 @@ SET search_path = public, pg_catalog;
 --
 
 COPY auth_group (id, name) FROM stdin;
-4	CURATOR
+3	CURATOR
 2	DIL
 1	READ
 \.
-
 
 --
 -- Name: auth_group_id_seq; Type: SEQUENCE SET; Schema: public; Owner: prem
 --
 
---SELECT pg_catalog.setval('auth_group_id_seq', 4, true);
 SELECT pg_catalog.setval('auth_group_id_seq', coalesce(max("id"), 1), max("id") IS NOT null) FROM "auth_group";
 
-
 --
--- Data for Name: django_content_type; Type: TABLE DATA; Schema: public; Owner: prem Not copied
---
-
-
---
--- Data for Name: auth_permission; Type: TABLE DATA; Schema: public; Owner: prem
+-- Data for Name: django_content_type; Type: TABLE DATA; Schema: public; Owner: prem; Not copied
 --
 
-COPY auth_permission (id, name, codename, content_type_id) FROM stdin;
-31	Can read only	can_read	9
-32	Can read auth test data	can_read	10
-33	Can read curate data	can_read_curate	10
-\.
-
-
 --
--- Data for Name: auth_group_permissions; Type: TABLE DATA; Schema: public; Owner: prem
+-- Data for Name: auth_permission; Type: TABLE DATA; Schema: public; Owner: prem; Not copied
 --
 
-COPY auth_group_permissions (id, group_id, permission_id) FROM stdin;
-4	4	33
-6	2	32
-15	1	31
-\.
-
+--
+-- Data for Name: auth_group_permissions; Type: TABLE DATA; Schema: public; Owner: prem; Not copied
+--
 
 --
 -- Name: auth_group_permissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: prem
 --
 
---SELECT pg_catalog.setval('auth_group_permissions_id_seq', 15, true);
 SELECT pg_catalog.setval('auth_group_permissions_id_seq', coalesce(max("id"), 1), max("id") IS NOT null) FROM "auth_group_permissions";
 
 
@@ -68,7 +49,6 @@ SELECT pg_catalog.setval('auth_group_permissions_id_seq', coalesce(max("id"), 1)
 -- Name: auth_permission_id_seq; Type: SEQUENCE SET; Schema: public; Owner: prem
 --
 
---SELECT pg_catalog.setval('auth_permission_id_seq', 38, true);
 SELECT pg_catalog.setval('auth_permission_id_seq', coalesce(max("id"), 1), max("id") IS NOT null) FROM "auth_permission";
 
 
@@ -77,9 +57,9 @@ SELECT pg_catalog.setval('auth_permission_id_seq', coalesce(max("id"), 1), max("
 --
 
 COPY auth_user (id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined) FROM stdin;
-5	pbkdf2_sha256$20000$oGNfCvP92wP6$kp32dEh7L34czRF+t4e7cZ4JgXEn4GhvBn3rIY1crnE=	2015-08-04 17:20:32.689239+01	f	prem_dil			prem.apa@gmail.com	f	t	2015-07-22 13:09:28+01
-3	pbkdf2_sha256$20000$T02Ktf3IpbhF$2ZiXuYHYAtNiLQkrmiiZUwJmPsb4mtGV4kzc/+5WVAE=	2015-08-05 09:26:56.360424+01	f	prem_ro			prem.apa@gmail.com	f	t	2015-07-22 11:33:35.424898+01
-6	pbkdf2_sha256$20000$Ba1MF9jdjCLF$WuC075BcgzkrAf4ShVGgZO6FviNYlnfEngOF4za9L6k=	2015-07-30 15:16:57.951831+01	f	prem_curator			prem.apa@gmail.com	f	t	2015-07-22 13:10:15+01
+5	pbkdf2_sha256$20000$oGNfCvP92wP6$kp32dEh7L34czRF+t4e7cZ4JgXEn4GhvBn3rIY1crnE=	2015-08-04 17:20:32.689239+01	f	prem_dil			prem.dil@dummy.xxx	f	t	2015-07-22 13:09:28+01
+3	pbkdf2_sha256$20000$T02Ktf3IpbhF$2ZiXuYHYAtNiLQkrmiiZUwJmPsb4mtGV4kzc/+5WVAE=	2015-08-05 09:26:56.360424+01	f	prem_ro			prem.ro@dummy.xxx	f	t	2015-07-22 11:33:35.424898+01
+6	pbkdf2_sha256$20000$Ba1MF9jdjCLF$WuC075BcgzkrAf4ShVGgZO6FviNYlnfEngOF4za9L6k=	2015-07-30 15:16:57.951831+01	f	prem_curator			prem.cur@dummy.xxx	f	t	2015-07-22 13:10:15+01
 10	pbkdf2_sha256$20000$Wi2WC2wYikwm$oDDuxs9iLOSw+F5PGouyMmN6vib37jafNgotOD9IOcw=	2015-07-31 14:18:28.307727+01	f	dummyuser			dummy@dummy.com	f	t	2015-07-31 14:18:28.194449+01
 11	pbkdf2_sha256$20000$StXVdtds49Of$wHQLXChZs/5SauBZHhboaVjoFHlYx7+0h16ih04LK1M=	2015-07-31 14:20:53.518653+01	f	testuser			test@testmail.com	f	t	2015-07-31 14:20:53.413251+01
 1	pbkdf2_sha256$20000$WB0wuebUGDZT$RDeQG/w6ahCfEZ8pUaIsFbz0KLa1l3uM48s6uUPPhCY=	2015-08-04 16:38:40.12695+01	t	admin			premanand.achuthan@cimr.cam.ac.uk	t	t	2015-07-22 11:15:09.182062+01
@@ -93,7 +73,7 @@ COPY auth_user (id, password, last_login, is_superuser, username, first_name, la
 COPY auth_user_groups (id, user_id, group_id) FROM stdin;
 2	3	1
 8	6	1
-9	6	4
+9	6	3
 10	5	1
 11	5	2
 15	10	1
@@ -105,7 +85,6 @@ COPY auth_user_groups (id, user_id, group_id) FROM stdin;
 -- Name: auth_user_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: prem
 --
 
---SELECT pg_catalog.setval('auth_user_groups_id_seq', 16, true);
 SELECT pg_catalog.setval('auth_user_groups_id_seq', coalesce(max("id"), 1), max("id") IS NOT null) FROM "auth_user_groups";
 
 
@@ -113,7 +92,6 @@ SELECT pg_catalog.setval('auth_user_groups_id_seq', coalesce(max("id"), 1), max(
 -- Name: auth_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: prem
 --
 
---SELECT pg_catalog.setval('auth_user_id_seq', 11, true);
 SELECT pg_catalog.setval('auth_user_id_seq', coalesce(max("id"), 1), max("id") IS NOT null) FROM "auth_user";
 
 --
@@ -154,8 +132,6 @@ fa9d3023e0a31cc6bd40ddb0cf337ebbcf176974	2015-07-31 14:20:53.469208+01	6
 -- Name: django_admin_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: prem
 --
 
---SELECT pg_catalog.setval('django_admin_log_id_seq', 36, true);
-
 
 --
 -- Name: django_content_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: prem
@@ -171,8 +147,6 @@ SELECT pg_catalog.setval('django_content_type_id_seq', coalesce(max("id"), 1), m
 --
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: prem
 --
-
---SELECT pg_catalog.setval('django_migrations_id_seq', 9, true);
 
 
 --
@@ -197,7 +171,6 @@ COPY pydgin_auth_userprofile (id, user_id, is_terms_agreed) FROM stdin;
 -- Name: pydgin_auth_userprofile_id_seq; Type: SEQUENCE SET; Schema: public; Owner: prem
 --
 
---SELECT pg_catalog.setval('pydgin_auth_userprofile_id_seq', 10, true);
 SELECT pg_catalog.setval('pydgin_auth_userprofile_id_seq', coalesce(max("id"), 1), max("id") IS NOT null) FROM "pydgin_auth_userprofile";
 
 

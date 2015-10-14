@@ -1,6 +1,6 @@
-{% extends "base.html" %}
+{% extends basehtmldir|add:"base.html"%} 
 
-{% block header %}
+{% block header_js %}
  <script language="javascript" type="text/javascript">
 $(document).ready(function() {
                 //for registration form
@@ -17,7 +17,9 @@ $(document).ready(function() {
    				 });
 });    
 </script>
+{% endblock header_js %}
 
+{% block header_css %}
 <style type="text/css">
 /*Style for terms & conditions */
 
@@ -35,7 +37,7 @@ div.terms_n_conditions {
 }
 
 </style>
-{% endblock header%}
+{% endblock header_css %}
 
 
 {% block title %}Register{% endblock %}

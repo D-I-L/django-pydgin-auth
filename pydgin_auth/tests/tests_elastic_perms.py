@@ -6,12 +6,18 @@ from elastic.elastic_settings import ElasticSettings
 from elastic.search import Search, ElasticQuery
 from elastic.query import Query, TermsFilter, BoolQuery
 import requests
-from django.contrib.auth.models import User, Group
-from pydgin_auth.permissions import get_user_groups
+from django.contrib.auth.models import User, Group, Permission
+from pydgin_auth.permissions import get_user_groups,\
+    get_authenticated_idx_and_idx_types
 from django.test.client import Client, RequestFactory
 # Get an instance of a logger
 import logging
 import json
+from django.test.utils import override_settings
+from pydgin_auth.elastic_model_factory import ElasticPermissionModelFactory as elastic_factory
+from pydgin_auth.tests.settings_idx import OVERRIDE_SETTINGS_PYDGIN
+from django.contrib.contenttypes.models import ContentType
+from django.shortcuts import get_object_or_404
 logger = logging.getLogger(__name__)
 
 
@@ -58,7 +64,123 @@ class PydginAuthElasticTestCase(TestCase):
             ndocs = Search(idx=idx).get_count()['count']
             self.assertTrue(ndocs > 0, "Elastic count documents in " + idx + ": " + str(ndocs))
 
-        # Query the index for private regions
+    @override_settings(ELASTIC=OVERRIDE_SETTINGS_PYDGIN)
+    def test_get_authenticated_idx_and_idx_types(self):
+
+        elastic_factory.create_dynamic_models()
+
+        # As user is none we should get back only public idx and idx_type keys
+        (idx_keys_auth, idx_type_keys_auth) = get_authenticated_idx_and_idx_types(user=None)
+
+        self.assertIn('MARKER', idx_keys_auth)
+        self.assertIn('GENE', idx_keys_auth)
+        self.assertIn('PUBLICATION', idx_keys_auth)
+
+        self.assertIn('MARKER.MARKER', idx_type_keys_auth)
+        self.assertIn('MARKER.HISTORY', idx_type_keys_auth)
+        self.assertIn('GENE.GENE', idx_type_keys_auth)
+
+        # As user is not none and we have assigned the user to any group we should get back
+        # only public idx and idx_type keys
+        (idx_keys_auth, idx_type_keys_auth) = get_authenticated_idx_and_idx_types(self.user)
+
+        self.assertIn('MARKER', idx_keys_auth)
+        self.assertIn('GENE', idx_keys_auth)
+        self.assertIn('PUBLICATION', idx_keys_auth)
+
+        self.assertIn('MARKER.MARKER', idx_type_keys_auth)
+        self.assertIn('MARKER.HISTORY', idx_type_keys_auth)
+        self.assertIn('GENE.GENE', idx_type_keys_auth)
+
+        # Create test_dil user and assign the user to DIL group
+        dil_group, created = Group.objects.get_or_create(name='DIL')
+        self.assertTrue(created)
+        dil_user = User.objects.create_user(
+            username='test_dil', email='test_dil@test.com', password='test123')
+        dil_user.groups.add(dil_group)
+        self.assertTrue(dil_user.groups.filter(name='DIL').exists())
+
+        all_groups_of_dil_user = dil_user.groups.values_list('name', flat=True)
+        self.assertTrue("DIL" in all_groups_of_dil_user, "Found DIL in groups")
+        self.assertTrue("READ" in all_groups_of_dil_user, "Found READ in groups")
+
+        # get private idx and assign permission to dil_user
+        (model_names_idx, model_names_idx_types) = elastic_factory.get_elastic_model_names(auth_public=False)
+
+        test_idx_model = model_names_idx[0]
+        test_idx_type_model = model_names_idx_types[1]
+
+        self.assertTrue(test_idx_model.endswith('_idx'), 'Idx model ends with _idx')
+        self.assertTrue(test_idx_type_model.endswith('_idx_type'), 'Idx type model ends with _idx_type')
+
+        # create permissions on models and retest again to check if the idx could be seen
+        content_type_idx, created_idx = ContentType.objects.get_or_create(  # @UnusedVariable
+            model=test_idx_model, app_label=elastic_factory.PERMISSION_MODEL_APP_NAME,
+        )
+
+        content_type_idx_type, created_idx_type = ContentType.objects.get_or_create(  # @UnusedVariable
+            model=test_idx_type_model, app_label=elastic_factory.PERMISSION_MODEL_APP_NAME,
+        )
+
+        # The idx and idx_type should already exists in db, so created should be false
+        self.assertFalse(created_idx, test_idx_model + ' is available ')
+        self.assertFalse(created_idx_type, test_idx_type_model + ' is available ')
+
+        self.assertIsNotNone(content_type_idx, content_type_idx.name + ' is not None')
+        self.assertIsNotNone(content_type_idx_type, content_type_idx_type.name + ' is not None')
+
+        # create permission and assign ...Generally we create via admin interface
+        can_read_permission_idx, create_permission_idx = Permission.objects.get_or_create(  # @UnusedVariable
+            content_type=content_type_idx)
+        self.assertIsNotNone(can_read_permission_idx, ' Permission is available ' + can_read_permission_idx.name)
+
+        can_read_permission_idx_type, create_permission_idx = Permission.objects.get_or_create(  # @UnusedVariable
+            content_type=content_type_idx_type)
+        self.assertIsNotNone(can_read_permission_idx_type,
+                             ' Permission is available ' + can_read_permission_idx_type.name)
+
+        # now grant access to test_dil and check if the user can see the index
+        # Add the permission to dil_group
+        dil_group.permissions.add(can_read_permission_idx)
+        dil_group.permissions.add(can_read_permission_idx_type)
+
+        dil_user = get_object_or_404(User, pk=dil_user.id)
+        available_group_perms = dil_user.get_group_permissions()
+
+        self.assertTrue('elastic.can_read_' + test_idx_model.lower() in available_group_perms)
+        self.assertTrue('elastic.can_read_' + test_idx_type_model.lower() in available_group_perms)
+
+        # Try to get the authenticated idx and idx_types keys again
+        (idx_keys_auth, idx_type_keys_auth) = get_authenticated_idx_and_idx_types(dil_user)
+
+        (idx_model_name_auth, idx_type_model_name_auth) = elastic_factory.get_elastic_model_names(
+            idx_keys=idx_keys_auth,
+            idx_type_keys=idx_type_keys_auth)
+
+        self.assertTrue(test_idx_model in idx_model_name_auth)
+        self.assertTrue(test_idx_type_model in idx_type_model_name_auth)
+
+        self.assertIn('MARKER', idx_keys_auth)
+        self.assertIn('GENE', idx_keys_auth)
+        self.assertIn('PUBLICATION', idx_keys_auth)
+
+        self.assertIn('MARKER.MARKER', idx_type_keys_auth)
+        self.assertIn('MARKER.HISTORY', idx_type_keys_auth)
+        self.assertIn('GENE.GENE', idx_type_keys_auth)
+
+        # pass just one index key and index type and check for returned keys and types
+        # publication idx is public and publication.publication is private
+        idx_keys = ['PUBLICATION']
+        idx_type_keys = ['PUBLICATION.PUBLICATION']
+        idx_keys_auth = []
+        idx_type_keys_auth = []
+        (idx_keys_auth, idx_type_keys_auth) = get_authenticated_idx_and_idx_types(self.user,
+                                                                                  idx_keys=idx_keys,
+                                                                                  idx_type_keys=idx_type_keys)
+        self.assertIn('PUBLICATION', idx_keys_auth)
+        self.assertNotIn('PUBLICATION.PUBLICATION', idx_type_keys_auth)
+
+        self.assertTrue(len(idx_keys_auth) == 1, 'Got back only one idx')
 
     def test_elastic_group_name(self):
         '''

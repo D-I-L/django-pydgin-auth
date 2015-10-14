@@ -23,6 +23,8 @@ class UserProfile(models.Model):
     """Extention for user model..added is_terms_agreed as an extra field"""
     user = models.ForeignKey(User, unique=True)
     is_terms_agreed = models.BooleanField(default=False)
+
+    User._meta.get_field('email')._unique = True  # @UndefinedVariable
     # Create profile automatically when referenced
     User.profile = property(lambda u: UserProfile.objects.get_or_create(user=u)[0])
 

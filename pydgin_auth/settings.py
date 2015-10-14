@@ -24,5 +24,7 @@ LOGIN_EXEMPT_URLS = (r'^pydgin_auth',
 RUN_PERMS_MODEL = True
 
 # BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PROJECT_DIR = os.path.dirname(__file__)
-sys.path.insert(0, os.path.join(PROJECT_DIR, 'local_apps'))
+PYDGIN_AUTH_DIR = os.path.dirname(__file__)
+sys.path.insert(0, os.path.join(PYDGIN_AUTH_DIR, 'local_apps'))
+ELASTIC_PERMISSION_MODEL_APP_NAME = 'elastic'
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
