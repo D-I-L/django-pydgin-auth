@@ -63,6 +63,7 @@ COPY auth_user (id, password, last_login, is_superuser, username, first_name, la
 10	pbkdf2_sha256$20000$Wi2WC2wYikwm$oDDuxs9iLOSw+F5PGouyMmN6vib37jafNgotOD9IOcw=	2015-07-31 14:18:28.307727+01	f	dummyuser			dummy@dummy.com	f	t	2015-07-31 14:18:28.194449+01
 11	pbkdf2_sha256$20000$StXVdtds49Of$wHQLXChZs/5SauBZHhboaVjoFHlYx7+0h16ih04LK1M=	2015-07-31 14:20:53.518653+01	f	testuser			test@testmail.com	f	t	2015-07-31 14:20:53.413251+01
 1	pbkdf2_sha256$20000$WB0wuebUGDZT$RDeQG/w6ahCfEZ8pUaIsFbz0KLa1l3uM48s6uUPPhCY=	2015-08-04 16:38:40.12695+01	t	admin			premanand.achuthan@cimr.cam.ac.uk	t	t	2015-07-22 11:15:09.182062+01
+12	pbkdf2_sha256$20000$HJpA8iucSRqf$Ti3MaStTmS+AnKJROgVYQtPmhQJ5itOvZhScbS7xClg=	2015-10-21 10:36:09+01	f	ellen.schofield	Ellen	Schofield	ellen.schofield@cimr.cam.ac.uk	t	t	2015-10-21 10:33:22+01
 \.
 
 
@@ -78,6 +79,8 @@ COPY auth_user_groups (id, user_id, group_id) FROM stdin;
 11	5	2
 15	10	1
 16	11	1
+20	12	1
+21	12	2
 \.
 
 
@@ -121,6 +124,7 @@ ee2a620269a19eeecff1a01d95c66b7f50b9fd2d	2015-07-31 14:18:28.252227+01	10
 ceb7f8da042cdfb3df4a829ad28c59ee577f5132	2015-07-31 14:20:53.465311+01	11
 fa9d3023e0a31cc6bd40ddb0cf337ebbcf176974	2015-07-31 14:20:53.469208+01	6
 76f82eafbd169a0676220fdacbb13b706f4be81b	2015-07-31 14:20:53.474583+01	1
+c599001e0a5418bf7dbbddf59aa6a3408785fad1	2015-10-21 10:33:22.95711+01	12
 \.
 
 
@@ -164,6 +168,7 @@ COPY pydgin_auth_userprofile (id, user_id, is_terms_agreed) FROM stdin;
 7	1	f
 9	10	t
 10	11	t
+11	12	t
 \.
 
 
