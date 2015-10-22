@@ -15,7 +15,8 @@ import logging
 import json
 from django.test.utils import override_settings
 from pydgin_auth.elastic_model_factory import ElasticPermissionModelFactory as elastic_factory
-from pydgin_auth.tests.settings_idx import OVERRIDE_SETTINGS_PYDGIN
+from pydgin_auth.tests.settings_idx import OVERRIDE_SETTINGS_PYDGIN,\
+    OVERRIDE_SETTINGS_CHICP
 from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import get_object_or_404
 logger = logging.getLogger(__name__)
@@ -181,6 +182,19 @@ class PydginAuthElasticTestCase(TestCase):
         self.assertNotIn('PUBLICATION.PUBLICATION', idx_type_keys_auth)
 
         self.assertTrue(len(idx_keys_auth) == 1, 'Got back only one idx')
+
+    @override_settings(ELASTIC=OVERRIDE_SETTINGS_CHICP)
+    def test_elastic_model_names_round_trip(self):
+
+        # getting the private ones
+        (model_names_idx, model_names_idx_types) = elastic_factory.get_elastic_model_names(auth_public=False)
+        self.assertIn('target_mifsud_idx', model_names_idx, 'target_mifsud_idx found')
+        self.assertIn('cp_stats_gwas-gwas-anderson_idx_type', model_names_idx_types,
+                      'cp_stats_gwas-gwas-anderson_idx_type found')
+
+        (idx_keys, idx_type_keys) = elastic_factory.get_keys_from_model_names(model_names_idx, model_names_idx_types)
+        self.assertIn('TARGET_MIFSUD', idx_keys, 'TARGET_MIFSUD found')
+        self.assertIn('CP_STATS_IC.IC-NAR_FARACO', idx_type_keys, 'CP_STATS_IC.IC-NAR_FARACO found')
 
     def test_elastic_group_name(self):
         '''

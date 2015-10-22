@@ -79,8 +79,6 @@ class ElasticModelFactoryTest(TestCase):
         # public idx type keys
         self.assertNotIn('GENE.GENE', idx_type_keys)
         self.assertNotIn('MARKER.MARKER', idx_type_keys)
-        self.assertNotIn('MARKER.MARKER', idx_type_keys)
-        self.assertNotIn('MARKER.MARKER', idx_type_keys)
 
         # get all public idx and keys
         (idx_keys, idx_type_keys) = elastic_factory.get_idx_and_idx_type_keys(auth_public=True)

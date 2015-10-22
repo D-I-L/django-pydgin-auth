@@ -187,11 +187,22 @@ class ElasticPermissionModelFactory():
         idx_keys = [model_name.replace(ElasticPermissionModelFactory.PERMISSION_MODEL_SUFFIX,
                                        '') for model_name in idx_model_names]
 
-        idx_type_keys = [model_name.replace(cls.PERMISSION_MODEL_TYPE_SUFFIX,
-                                            '').replace(cls.PERMISSION_MODEL_NAME_TYPE_DELIMITER, '.')
-                         for model_name in idx_type_model_names]
+        # get all idx keys
+        (idx_keys_private, idx_type_keys_private) = cls.get_idx_and_idx_type_keys(auth_public=False)  # @UnusedVariable
+        (idx_keys_public, idx_type_keys_public) = cls.get_idx_and_idx_type_keys(auth_public=True)  # @UnusedVariable
 
-        # make case insensitive
+        idx_keys_all = idx_keys_private + idx_keys_public
+
+        idx_type_keys = []
+        for model_name in idx_type_model_names:
+            for idx_key in idx_keys_all:
+                if model_name.lower().startswith(idx_key.lower()):
+                    model_name_no_suffix = model_name.replace(cls.PERMISSION_MODEL_TYPE_SUFFIX, '')
+                    (head, idx_str, idx_type_str) = model_name_no_suffix.partition(idx_key.lower())  # @UnusedVariable
+                    idx_type_str = idx_type_str.replace(cls.PERMISSION_MODEL_NAME_TYPE_DELIMITER, ".", 1)
+                    idx_type_key = idx_str + idx_type_str
+                    idx_type_keys.append(idx_type_key)
+
         idx_keys_icase = [x.upper() for x in idx_keys]
         idx_type_keys_icase = [x.upper() for x in idx_type_keys]
         return(idx_keys_icase, idx_type_keys_icase)
