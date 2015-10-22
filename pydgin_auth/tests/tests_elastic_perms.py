@@ -240,7 +240,7 @@ class PydginAuthElasticTestCase(TestCase):
         self.assertTrue(len(group_names) > 0, "More than 1 group present")
         self.assertTrue("dil" in group_names, "DIL group present")
 
-        # retrieves all docs with missing file group_name - 11 docs
+        # retrieves all docs with missing field group_name - 11 docs
         terms_filter = TermsFilter.get_missing_terms_filter("field", "group_name")
         query = ElasticQuery.filtered(Query.match_all(), terms_filter)
         elastic = Search(query, idx=self.index_name)

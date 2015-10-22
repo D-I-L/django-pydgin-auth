@@ -2,7 +2,41 @@
 {% block title %}You are Registered{% endblock %}
 {% block content %}
 
+
+{% if success_registration %}
   <h2>Welcome {{ user.username }}. Thank you for Registering</h2>
+  You have been send a mail to your registered email address {{ user.email }} with activation link. Please click the link to activate your account. 
+{% endif %}
+
+
+{% if failure_registration %}
+  <h2>Welcome {{ user.username }}. Thank you for your interest in Registering to our site</h2>
+ Unfortunately, the registration process failed. Please try to register again,
+  <p><a href="/accounts/register/">Please Register</a></p>
+{% endif %}
+
+
+{% if success_activation %}
+  <h2>Welcome {{ user.username }}. Thank you for Registering</h2>
+  Your account has been activated now and your are a registered user. Please login using your userid: {{ user.username }}
+  
   <p><a href="/accounts/login/">Please Login</a></p>
+{% endif %}
+
+
+{% if expired %}
+  <h2>Welcome {{ user.username }}. Thank you for your interest in Registering to our site</h2>
+  Unfortunately, your activation key has expired. Please register again
+  
+  <p><a href="/accounts/register/">Please Login</a></p>
+{% endif %}
+
+
+{% if has_account %}
+  <h2>Welcome {{ user.username }}. Thank you for visiting us.</h2>
+  Your account has been activated already. Please login using your userid {{ user.username }}
+  
+  <p><a href="/accounts/login/">Please Login</a></p>
+{% endif %}
 
 {% endblock %}

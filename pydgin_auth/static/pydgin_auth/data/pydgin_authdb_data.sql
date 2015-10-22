@@ -162,10 +162,10 @@ SELECT pg_catalog.setval('django_content_type_id_seq', coalesce(max("id"), 1), m
 --
 
 COPY pydgin_auth_userprofile (id, user_id, is_terms_agreed) FROM stdin;
-1	3	f
-3	5	f
-4	6	f
-7	1	f
+1	3	t
+3	5	t
+4	6	t
+7	1	t
 9	10	t
 10	11	t
 11	12	t

@@ -4,6 +4,7 @@ from django.contrib import admin
 import django.contrib.auth.views
 import pydgin_auth.views
 from django.conf import settings
+from pydgin_auth.views import activate
 admin.autodiscover()
 
 try:
@@ -19,6 +20,8 @@ urlpatterns = [url(r'^login/$',  pydgin_auth.views.login_user, {"extra_context":
                url(r'^permission_denied/$',  pydgin_auth.views.permission_denied),
                url(r'^register/$', pydgin_auth.views.register),
                url(r'^register/complete/$', pydgin_auth.views.registration_complete),
+               url(r'^user/activate/(?P<activation_key>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
+                   activate, name='user_activation_link'),
                url(r'^user/password/reset/$', django.contrib.auth.views.password_reset,
                    {'post_reset_redirect': '/accounts/user/password/reset/done/',
                     'template_name': 'registration/admin/password_reset_form.html',

@@ -1,0 +1,31 @@
+{% extends basehtmldir|add:"base.html"%} 
+
+{% block title %}Activation complete{% endblock %}
+
+{% block content %}
+
+
+{% if success %}
+  <h2>Welcome {{ user_name }}. Thank you for Registering</h2>
+  Your account has been activated now and your are a registered user. Please login using your userid
+  
+  <p><a href="/accounts/login/">Please Login</a></p>
+{% endif %}
+
+
+{% if expired %}
+  <h2>Welcome {{ user_name }}. Thank you for your interest in Registering to our site</h2>
+  Unfortunately, your activation key has expired. Please register again
+  
+  <p><a href="/accounts/register/">Please Register</a></p>
+{% endif %}
+
+
+{% if has_account %}
+  <h2>Welcome {{ user_name }}. Thank you for visiting us.</h2>
+  Your account has been activated already. Please login using your userid
+  
+  <p><a href="/accounts/login/">Please Login</a></p>
+{% endif %}
+
+{% endblock %}
