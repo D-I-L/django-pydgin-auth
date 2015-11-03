@@ -3,7 +3,8 @@ from django.shortcuts import render, get_object_or_404
 from django.core.context_processors import csrf
 from django.contrib.auth import authenticate, login
 from django.template.context import RequestContext
-from pydgin_auth.forms import PydginUserCreationForm
+from pydgin_auth.forms import PydginUserCreationForm,\
+    PydginUserAuthenticationForm
 import os.path
 from django.contrib.auth.decorators import login_required
 from rest_framework.authtoken.models import Token
@@ -23,7 +24,9 @@ def login_user(request, template_name='registration/login.html', extra_context=N
     if 'remember_me' in request.POST:
         request.session.set_expiry(1209600)  # 2 weeks
 
-    response = auth_views.login(request, template_name=template_name, extra_context=extra_context)
+    response = auth_views.login(request, template_name=template_name,
+                                authentication_form=PydginUserAuthenticationForm,
+                                extra_context=extra_context)
     return response
 
 
@@ -83,15 +86,14 @@ def register(request, extra_context=None):
         form = PydginUserCreationForm(request.POST)
         if form.is_valid():
             new_user = form.save()
-
             new_user.backend = 'django.contrib.auth.backends.ModelBackend'
-            new_user = authenticate(username=form.cleaned_data['username'],
+            new_user = authenticate(username=form.cleaned_data['username'].lower(),
                                     password=form.cleaned_data['password1'],
                                     email=form.cleaned_data['email'],
                                     is_terms_agreed=form.cleaned_data['is_terms_agreed'])
 
             # login(request, new_user)
-            if new_user.is_authenticated:
+            if new_user and new_user.is_authenticated:
                 '''We have to login once so the last login date is set'''
                 login(request, new_user)
 
@@ -115,6 +117,8 @@ def register(request, extra_context=None):
                 else:
                     request_context.push({"failure_registration": True})
                     return render(request, 'registration/registration_form_complete.html', request_context)
+            else:
+                print('new_user is not authenticated')
         else:
             '''not a valid form'''
             # print(form.error_messages)

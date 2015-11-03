@@ -8,7 +8,6 @@ OVERRIDE_SETTINGS_CHICP = \
                 'name': 'cp:hg19_userdata_bed',
                 'label': 'User Data',
                 'idx_type': {},
-                'auth_public': True,
                 },
             'CP_STATS_IC': {
                 'name': 'cp:hg19_immunochip_bed',

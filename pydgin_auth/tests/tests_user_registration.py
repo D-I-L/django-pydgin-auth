@@ -112,6 +112,20 @@ class UserRegistration(TestCase):
         self.assertContains(response, 'User with this Email address already exists')
         self.assertContains(response, 'A user with that username already exists')
 
+        # try to create user with same user name in UPPER CASE
+        response = self.client.post('/accounts/register/',
+                                    {'username': 'NEW_USER', 'email': 'newuser@example.com',
+                                     'password1': 'newtest', 'password2': 'newtest', 'is_terms_agreed': '1'})
+        self.assertEqual(response.status_code, 200)
+
+        self.assertContains(response, 'A user with that username already exists')
+
+        # try to login with user name in UPPER CASE
+        response = self.client.post('/accounts/login/', {'username': 'NEW_USER', 'password': 'newtest'})
+        self.assertTrue(response.status_code, "200")
+        self.assertIn('_auth_user_id', self.client.session)
+        self.assertEqual(User.objects.get(id=self.client.session['_auth_user_id']).username, 'new_user')
+
     def test_login(self):
         '''Test login. First try to login with invalid credentials, and try again with right credentials again'''
         logger.debug('running test_login')

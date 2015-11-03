@@ -14,6 +14,8 @@ from django.contrib.admin.sites import AlreadyRegistered
 import logging
 from django.db import connections
 from django.conf import settings
+from elastic.search import Search
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +80,9 @@ class ElasticPermissionModelFactory():
     PERMISSION_MODEL_APP_NAME = settings.ELASTIC_PERMISSION_MODEL_APP_NAME
 
     @classmethod
-    def create_dynamic_models(cls):
+    def create_dynamic_models(cls, elastic_dict=None, idx_keys=None, idx_type_keys=None):
         '''main function that delegates the call to create the proxy models and managers for elastic indexes'''
-        (model_names_idx, model_names_idx_types) = cls.get_elastic_model_names()
+        (model_names_idx, model_names_idx_types) = cls.get_elastic_model_names(elastic_dict, idx_keys, idx_type_keys)
 
         model_names = model_names_idx + model_names_idx_types
 
@@ -126,6 +128,8 @@ class ElasticPermissionModelFactory():
         '''
         if elastic_dict is None:
             elastic_dict = ElasticSettings.attrs().get('IDX')
+            if settings.INCLUDE_USER_UPLOADS is True:
+                elastic_dict = cls.get_elastic_settings_with_user_uploads(elastic_dict)
 
         idx_type_keys_public = []
         idx_type_keys_private = []
@@ -223,3 +227,98 @@ class ElasticPermissionModelFactory():
             return all_existing_model_names
         else:
             return all_non_existing_models
+
+    @classmethod
+    def get_elastic_settings_with_user_uploads(cls, elastic_dict=None):
+        '''Get the updated elastic settings with user uploaded idx_types'''
+
+        idx_key = 'CP_STATS_UD'
+        idx = ElasticSettings.idx(idx_key)
+
+        ''' Check if an index exists. '''
+        elastic_url = ElasticSettings.url()
+        url = idx + '/_mapping'
+        response = Search.elastic_request(elastic_url, url, is_post=False)
+
+        if "error" in response.json():
+            logger.warn(response.json())
+            return None
+
+        # get idx_types from _mapping
+        elastic_mapping = json.loads(response.content.decode("utf-8"))
+        idx_types = list(elastic_mapping[idx]['mappings'].keys())
+
+        if elastic_dict is None:
+            elastic_dict = ElasticSettings.attrs().get('IDX')
+
+        idx_type_dict = {}
+
+        for idx_type in idx_types:
+
+            meta_url = idx + '/' + idx_type + '/_meta/_source'
+            meta_response = Search.elastic_request(elastic_url, meta_url, is_post=False)
+
+            try:
+                elastic_meta = json.loads(meta_response.content.decode("utf-8"))
+                label = elastic_meta['label']
+            except:
+                label = "UD-" + idx_type
+
+            idx_type_dict['UD-' + idx_type.upper()] = {'label': label, 'type': idx_type}
+
+        elastic_dict['CP_STATS_UD']['idx_type'] = idx_type_dict
+        return elastic_dict
+
+    @classmethod
+    def create_idx_type_model_permissions(cls, user, elastic_dict=None, indexKey=None, indexTypeKey=None):
+        '''Create the models for the uploaded index types , create new permission and assign the permission to user'''
+
+        try:
+            if settings.INCLUDE_USER_UPLOADS is True and elastic_dict is None:
+                elastic_dict = cls.get_elastic_settings_with_user_uploads()
+        except:
+            pass
+
+        if indexKey is None:
+            indexKey = 'CP_STATS_UD'
+
+        user_upload_dict = list(elastic_dict[indexKey]['idx_type'].keys())
+
+        model_names_idx_types = []
+        if indexTypeKey in user_upload_dict:
+
+            if indexTypeKey.startswith('UD-'):
+                indexTypeKey = indexKey + '.' + indexTypeKey
+            else:
+                indexTypeKey = indexKey + '.' + 'UD-' + indexTypeKey.upper()
+
+            (model_names_idx, model_names_idx_types) = cls.get_elastic_model_names(elastic_dict=elastic_dict,  # @UnusedVariable @IgnorePep8
+                                                                                   idx_keys=[indexKey],
+                                                                                   idx_type_keys=[indexTypeKey])
+
+            cls.create_dynamic_models(idx_keys=[indexKey], idx_type_keys=[indexTypeKey])
+
+        existing_models = cls.get_db_models(existing=True)
+        if len(model_names_idx_types) == 1 and model_names_idx_types[0] in existing_models:
+
+            model_name = model_names_idx_types[0]
+            content_type = None
+            try:
+                content_type = ContentType.objects.get(model=model_name.lower(),
+                                                       app_label=settings.ELASTIC_PERMISSION_MODEL_APP_NAME)
+            except:
+                pass
+
+            permissions = None
+            perm_code_name = 'can_read_' + model_name.lower()
+
+            if content_type:
+                permissions = Permission.objects.filter(content_type=content_type)
+
+                if permissions:
+                    for perm in permissions:
+                        if perm_code_name == perm.codename:
+                            # assign permission to user
+                            user.user_permissions.add(perm)
+
+        return elastic_dict

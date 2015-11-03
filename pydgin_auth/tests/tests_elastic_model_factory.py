@@ -5,6 +5,7 @@ from django.contrib.auth.models import Group
 from pydgin_auth.tests.settings_idx import OVERRIDE_SETTINGS_CHICP,\
     OVERRIDE_SETTINGS_PYDGIN
 from pydgin_auth.elastic_model_factory import ElasticPermissionModelFactory as elastic_factory
+from elastic.elastic_settings import ElasticSettings
 
 
 def setUp(self):
@@ -23,6 +24,7 @@ class ElasticModelFactoryTest(TestCase):
 
         # private idx
         self.assertIn('TARGET_MIFSUD', idx_keys)
+        self.assertIn('CP_STATS_UD', idx_keys)
 
         # private idx types
         self.assertIn('CP_STATS_IC.IC-MS_IMSGC', idx_type_keys)
@@ -36,11 +38,10 @@ class ElasticModelFactoryTest(TestCase):
         # public idx
         (idx_keys, idx_type_keys) = elastic_factory.get_idx_and_idx_type_keys(auth_public=True)
 
-        # private idx
+        # public idx
         self.assertIn('CP_STATS_IC', idx_keys)
         self.assertIn('CP_STATS_GWAS', idx_keys)
         self.assertIn('TARGET_MARTIN', idx_keys)
-        self.assertIn('CP_STATS_UD', idx_keys)
         self.assertIn('TARGET_CHICAGO', idx_keys)
 
         # public idx and idx_type
@@ -54,7 +55,7 @@ class ElasticModelFactoryTest(TestCase):
         self.assertIn('CP_STATS_GWAS.GWAS-FRANKE', idx_type_keys)
         self.assertIn('CP_STATS_GWAS.GWAS-IMSGC', idx_type_keys)
 
-    @override_settings(ELASTIC=OVERRIDE_SETTINGS_PYDGIN)
+    @override_settings(ELASTIC=OVERRIDE_SETTINGS_PYDGIN, INCLUDE_USER_UPLOADS=False)
     def test_get_idx_and_idx_type_keys_pydgin(self):
         '''create idx and idxtype keys for chicp'''
         elastic_factory.create_dynamic_models()
@@ -103,7 +104,7 @@ class ElasticModelFactoryTest(TestCase):
         self.assertIn('MARKER.MARKER', idx_type_keys)
         self.assertIn('MARKER.MARKER', idx_type_keys)
 
-    @override_settings(ELASTIC=OVERRIDE_SETTINGS_PYDGIN)
+    @override_settings(ELASTIC=OVERRIDE_SETTINGS_PYDGIN, INCLUDE_USER_UPLOADS=False)
     def test_get_elastic_model_names_pydgin(self):
         '''check whether the right model names are created for pydgin'''
 
@@ -132,7 +133,17 @@ class ElasticModelFactoryTest(TestCase):
         self.assertIn('cp_stats_gwas-gwas-okada_idx_type', model_names_idx_types)
         self.assertIn('cp_stats_gwas-gwas-stahl_idx_type', model_names_idx_types)
 
-    @override_settings(ELASTIC=OVERRIDE_SETTINGS_PYDGIN)
+    @override_settings(ELASTIC=OVERRIDE_SETTINGS_CHICP)
+    def test_create_models_for_user_uploads(self):
+        elastic_settings_before = ElasticSettings.attrs().get('IDX')
+        user_types_before = elastic_settings_before['CP_STATS_UD']['idx_type']
+        self.assertEqual({}, user_types_before, 'CP_STATS_UD idx_type is empty')
+
+#         elastic_settings_after = elastic_factory.get_elastic_settings_with_user_uploads(elastic_settings_before)
+#         user_types_after = elastic_settings_after['CP_STATS_UD']['idx_type']
+#         self.assertTrue(len(user_types_after) > 0, "Has user idx_types ")
+
+    @override_settings(ELASTIC=OVERRIDE_SETTINGS_PYDGIN, INCLUDE_USER_UPLOADS=False)
     def test_elastic_models_pydgin(self):
         '''check whether the right models are created for pydgin'''
         elastic_factory.create_dynamic_models()
@@ -146,7 +157,7 @@ class ElasticModelFactoryTest(TestCase):
         for model in expected_models:
             self.assertIn(model, existing_models, 'Model exists: ' + model)
 
-    @override_settings(ELASTIC=OVERRIDE_SETTINGS_PYDGIN)
+    @override_settings(ELASTIC=OVERRIDE_SETTINGS_PYDGIN, INCLUDE_USER_UPLOADS=False)
     def test_get_keys_from_model_names(self):
 
         idx_model_names = ['disease_idx', 'gene_idx']

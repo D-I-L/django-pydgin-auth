@@ -25,7 +25,7 @@ class ElasticSearchAuthTest(TestCase):
             User.objects.filter().delete()
             Permission.objects.filter().delete()
 
-    @override_settings(ELASTIC=OVERRIDE_SETTINGS_PYDGIN)
+    @override_settings(ELASTIC=OVERRIDE_SETTINGS_PYDGIN, INCLUDE_USER_UPLOADS=False)
     def test_search_props(self):
 
         if 'pydgin_auth' in settings.INSTALLED_APPS:

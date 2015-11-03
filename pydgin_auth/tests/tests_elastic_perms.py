@@ -19,6 +19,7 @@ from pydgin_auth.tests.settings_idx import OVERRIDE_SETTINGS_PYDGIN,\
     OVERRIDE_SETTINGS_CHICP
 from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import get_object_or_404
+from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
@@ -65,7 +66,7 @@ class PydginAuthElasticTestCase(TestCase):
             ndocs = Search(idx=idx).get_count()['count']
             self.assertTrue(ndocs > 0, "Elastic count documents in " + idx + ": " + str(ndocs))
 
-    @override_settings(ELASTIC=OVERRIDE_SETTINGS_PYDGIN)
+    @override_settings(ELASTIC=OVERRIDE_SETTINGS_PYDGIN, INCLUDE_USER_UPLOADS=False)
     def test_get_authenticated_idx_and_idx_types(self):
 
         elastic_factory.create_dynamic_models()
@@ -279,3 +280,51 @@ class PydginAuthElasticTestCase(TestCase):
         self.assertEqual(docs[0].attr['Name'], "4q27", "type matched region")
         self.assertEqual(docs[0].attr['region_id'], "803", "type matched region")
         self.assertEqual(docs[0].attr['group_name'], "[\"DIL\"]", "type matched region")
+
+    @override_settings(ELASTIC=OVERRIDE_SETTINGS_CHICP, INCLUDE_USER_UPLOADS=True)
+    def test_create_idx_type_model_permissions(self):
+
+        elastic_dict = elastic_factory.get_elastic_settings_with_user_uploads()
+        indexKey = 'CP_STATS_UD'
+        user_upload_dict = list(elastic_dict[indexKey]['idx_type'].keys())
+
+        indexName = 'CP_STATS_UD'
+        if len(user_upload_dict) > 1:
+            indexType = user_upload_dict[0]
+        else:
+            indexType = 'UD-RANDOMTMPTEST'
+            elastic_dict = ElasticSettings.attrs().get('IDX')
+            idx_type_dict = {}
+            idx_type_dict[indexType] = {'label': 'testlabel', 'type': indexType}
+            elastic_dict['CP_STATS_UD']['idx_type'] = idx_type_dict
+
+        indexTypeModel = indexKey.lower() + elastic_factory.PERMISSION_MODEL_NAME_TYPE_DELIMITER + indexType.lower() + \
+            elastic_factory.PERMISSION_MODEL_TYPE_SUFFIX
+
+        elastic_factory.create_idx_type_model_permissions(self.user, elastic_dict=elastic_dict,
+                                                          indexKey=indexName,
+                                                          indexTypeKey=indexType)
+
+        # check if model exists
+        db_models = elastic_factory.get_db_models(app_label=elastic_factory.PERMISSION_MODEL_APP_NAME, existing=True)
+        self.assertIn(indexTypeModel, db_models,
+                      ' model exists for ' + indexType)
+
+        # check if permission exists
+        content_type = None
+        try:
+            content_type = ContentType.objects.get(model=indexTypeModel.lower(),
+                                                   app_label=settings.ELASTIC_PERMISSION_MODEL_APP_NAME)
+        except:
+            pass
+
+        permissions = None
+        perm_code_name = 'can_read_' + indexTypeModel.lower()
+
+        if content_type:
+            permissions = Permission.objects.filter(content_type=content_type)
+            self.assertIn(perm_code_name, [perm.codename for perm in permissions], 'perm present')
+            # Request new instance of User
+            user = get_object_or_404(User, pk=self.user.id)
+            # Permission cache is repopulated from the database
+            self.assertTrue(user.has_perm(settings.ELASTIC_PERMISSION_MODEL_APP_NAME + '.' + perm_code_name))
