@@ -5,6 +5,7 @@ import django.contrib.auth.views
 import pydgin_auth.views
 from django.conf import settings
 from pydgin_auth.views import activate
+
 admin.autodiscover()
 
 try:
@@ -41,5 +42,8 @@ urlpatterns = [url(r'^login/$',  pydgin_auth.views.login_user, {"extra_context":
                     'extra_context': {"basehtmldir": base_html_dir},
                     },
                    name="password_reset_confirm"),
-               url(r'^user/password/done/$', django.contrib.auth.views.password_reset_complete),
+               url(r'^user/password/done/$', django.contrib.auth.views.password_reset_complete,
+                   {'template_name': 'registration/admin/password_reset_complete.html',
+                    'extra_context': {"basehtmldir": base_html_dir}},
+                   ),
                ]

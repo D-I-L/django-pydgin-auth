@@ -36,6 +36,11 @@ div.terms_n_conditions {
     color: gray;
 }
 
+.errorText {
+	color:  red;
+	font-weight: bold;
+}
+
 </style>
 {% endblock header_css %}
 
@@ -55,7 +60,7 @@ div.terms_n_conditions {
             </tr>
             <tr>  
                 <td></td>  
-                <td>{{ form.username.errors }}</td>
+                <td><span class="errorText">{{ form.username.errors }}</span></td>
             </tr>
             <tr>
                 <td>{{ form.email.label_tag }}</td>
@@ -63,7 +68,7 @@ div.terms_n_conditions {
             </tr>
              <tr>  
                 <td></td>  
-                <td>{{ form.email.errors }}</td>
+                <td><span class="errorText">{{ form.email.errors }}</span></td>
             </tr>
             <tr>
                 <td>{{ form.password1.label_tag }}</td>
@@ -71,7 +76,7 @@ div.terms_n_conditions {
            </tr>
            <tr>  
                 <td></td>  
-                <td>{{ form.password1.errors }}</td>
+                <td><span class="errorText">{{ form.password1.errors }}</span></td>
             </tr>
            
 		   <tr>
@@ -80,7 +85,7 @@ div.terms_n_conditions {
            </tr>
             <tr>  
                 <td></td>  
-                <td>{{ form.password2.errors }}</td>
+                <td><span class="errorText">{{ form.password2.errors }}</span></td>
             </tr>
             
             <tr>
@@ -104,7 +109,7 @@ div.terms_n_conditions {
             
              <tr>  
                 <td></td>  
-                <td>{{ form.is_terms_agreed.errors }}</td>
+                <td><span class="errorText">{{ form.is_terms_agreed.errors }}</span></td>
             </tr>
            
         </table>

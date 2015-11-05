@@ -6,7 +6,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 from django.dispatch.dispatcher import receiver
 from rest_framework.authtoken.models import Token
-from django.contrib.auth.backends import ModelBackend
 
 
 @receiver(post_save, sender=User, dispatch_uid='pydgin_auth.models.user_post_save_handler')
@@ -30,23 +29,6 @@ class UserProfile(models.Model):
     User._meta.get_field('email')._unique = True  # @UndefinedVariable
     # Create profile automatically when referenced
     User.profile = property(lambda u: UserProfile.objects.get_or_create(user=u)[0])
-
-
-class CaseInsensitiveModelBackend(ModelBackend):
-    """
-      By default ModelBackend does case _sensitive_ username authentication, which isn't what is
-      generally expected.  This backend supports case insensitive username authentication.
-    """
-    def authenticate(self, username=None, password=None):
-        print('Username === ' + username)
-        try:
-            user = User.objects.get(username__iexact=username)
-            if user.check_password(password):
-                return user
-            else:
-                return None
-        except User.DoesNotExist:
-            return None
 
 
 class GlobalPermissionManager(models.Manager):
