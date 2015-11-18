@@ -1,19 +1,27 @@
 ''' Test for elastic model factory '''
 from django.test import TestCase, override_settings
 
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from pydgin_auth.tests.settings_idx import OVERRIDE_SETTINGS_CHICP,\
     OVERRIDE_SETTINGS_PYDGIN
 from pydgin_auth.elastic_model_factory import ElasticPermissionModelFactory as elastic_factory
 from elastic.elastic_settings import ElasticSettings
-
-
-def setUp(self):
-    # create the default group READ
-    Group.objects.get_or_create(name='READ')
+from django.test.client import Client, RequestFactory
+from django.utils import timezone
+from os.path import os
 
 
 class ElasticModelFactoryTest(TestCase):
+
+    def setUp(self):
+        '''Create test user and test client'''
+        self.client = Client()
+        self.factory = RequestFactory()
+        self.default_group, created = Group.objects.get_or_create(name='READ')  # @UnusedVariable
+
+        self.user = User.objects.create_user(
+            username='test_user_ef', email='test_ef@test.com', password='test_pass')
+        self.user.groups.add(self.default_group)
 
     @override_settings(ELASTIC=OVERRIDE_SETTINGS_CHICP)
     def test_get_idx_and_idx_type_keys_cp(self):
@@ -133,15 +141,33 @@ class ElasticModelFactoryTest(TestCase):
         self.assertIn('cp_stats_gwas-gwas-okada_idx_type', model_names_idx_types)
         self.assertIn('cp_stats_gwas-gwas-stahl_idx_type', model_names_idx_types)
 
-    @override_settings(ELASTIC=OVERRIDE_SETTINGS_CHICP)
-    def test_create_models_for_user_uploads(self):
+    @override_settings(ELASTIC=OVERRIDE_SETTINGS_CHICP, INCLUDE_USER_UPLOADS=True)
+    def test_create_idx_type_model_permissions(self):
         elastic_settings_before = ElasticSettings.attrs().get('IDX')
         user_types_before = elastic_settings_before['CP_STATS_UD']['idx_type']
         self.assertEqual({}, user_types_before, 'CP_STATS_UD idx_type is empty')
 
-#         elastic_settings_after = elastic_factory.get_elastic_settings_with_user_uploads(elastic_settings_before)
-#         user_types_after = elastic_settings_after['CP_STATS_UD']['idx_type']
-#         self.assertTrue(len(user_types_after) > 0, "Has user idx_types ")
+        idx = "cp:hg19_userdata_bed"
+        new_upload_file = "tmp_newly_uploaded_file"
+        idx_type = new_upload_file
+
+        os.system("curl -XPUT "+ElasticSettings.url()+"/"+idx+"/_mapping/"+idx_type+" -d '{\"" +
+                  idx_type + "\":{ \"properties\" : {\"message\" : {\"type\" : \"string\", \"store\" : true } } }}'")
+
+        os.system("curl -XPUT "+ElasticSettings.url()+"/"+idx+"/"+idx_type+"/_meta -d '{\"label\": \"" +
+                  new_upload_file + "\", \"owner\": \""+self.user.username+"\", \"uploaded\": \"" +
+                  str(timezone.now())+"\"}'")
+
+        elastic_settings_after = elastic_factory.create_idx_type_model_permissions(self.user,
+                                                                                   indexKey='CP_STATS_UD',
+                                                                                   indexTypeKey='UD-'+new_upload_file.upper(),  # @IgnorePep8
+                                                                                   new_upload_file="tmp_newly_uploaded_file")  # @IgnorePep8
+
+        # elastic_settings_after = elastic_factory.get_elastic_settings_with_user_uploads(elastic_settings_before)
+        user_types_after = elastic_settings_after['CP_STATS_UD']['idx_type']
+        self.assertTrue(len(user_types_after) > 0, "Has user idx_types ")
+        self.assertTrue('UD-TMP_NEWLY_UPLOADED_FILE' in user_types_after)
+        self.assertEqual(user_types_after['UD-TMP_NEWLY_UPLOADED_FILE']['type'], 'tmp_newly_uploaded_file')
 
     @override_settings(ELASTIC=OVERRIDE_SETTINGS_PYDGIN, INCLUDE_USER_UPLOADS=False)
     def test_elastic_models_pydgin(self):

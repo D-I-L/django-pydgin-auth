@@ -71,6 +71,18 @@ def create_elastic_index_model(model_name, application_label):
     setattr(elasticmodel, 'objects', model_manager())
     return elasticmodel, created
 
+#
+# class ElasticModelAdmin(admin.ModelAdmin):
+#
+#     def elastic_delete_stale_ct(self, request):
+#         return delete_stale_ct(request, self)
+#
+#     def get_urls(self):
+#         return [
+#             url(r'^delete_stale_ct/$', self.admin_site.admin_view(self.elastic_delete_stale_ct),
+#                 name='delete_stale_ct_url'),
+#         ] + super(ElasticModelAdmin, self).get_urls()
+
 
 class ElasticPermissionModelFactory():
     '''class to create dynamic proxy models and managers for elastic indexes'''
@@ -108,14 +120,15 @@ class ElasticPermissionModelFactory():
                 Means, you have changed an idx from private to public
                 '''
                 # logger.warn('Model not found for ' + model_ct.model.lower())
-                model_name = model_ct.model.lower()
-                model, created = create_elastic_index_model(model_name,  # @UnusedVariable
-                                                            cls.PERMISSION_MODEL_APP_NAME)
+                # model_name = model_ct.model.lower()
+                # model, created = create_elastic_index_model(model_name,  # @UnusedVariable
+                #                                            cls.PERMISSION_MODEL_APP_NAME)
             except:
                 pass
 
             try:
                 if model is not None:
+                    # dmin.site.register(model, ElasticModelAdmin)
                     admin.site.register(model)
             except AlreadyRegistered:
                 pass
@@ -229,13 +242,13 @@ class ElasticPermissionModelFactory():
             return all_non_existing_models
 
     @classmethod
-    def get_elastic_settings_with_user_uploads(cls, elastic_dict=None):
+    def get_elastic_settings_with_user_uploads(cls, elastic_dict=None, new_upload_file=None):
         '''Get the updated elastic settings with user uploaded idx_types'''
 
         idx_key = 'CP_STATS_UD'
         idx = ElasticSettings.idx(idx_key)
 
-        ''' Check if an index exists. '''
+        ''' Check if an index type exists in elastic and later check there is a contenttype/model for the given elastic index type. '''  # @IgnorePep8
         elastic_url = ElasticSettings.url()
         url = idx + '/_mapping'
         response = Search.elastic_request(elastic_url, url, is_post=False)
@@ -253,35 +266,54 @@ class ElasticPermissionModelFactory():
 
         idx_type_dict = {}
 
+        existing_ct = [ct.name for ct in ContentType.objects.filter(app_label=cls.PERMISSION_MODEL_APP_NAME)]
+
         for idx_type in idx_types:
 
-            meta_url = idx + '/' + idx_type + '/_meta/_source'
-            meta_response = Search.elastic_request(elastic_url, meta_url, is_post=False)
+            idx_type_with_suffix = idx_type + cls.PERMISSION_MODEL_TYPE_SUFFIX
 
-            try:
-                elastic_meta = json.loads(meta_response.content.decode("utf-8"))
-                label = elastic_meta['label']
-            except:
-                label = "UD-" + idx_type
+            for ct in existing_ct:
+                if ct.endswith(idx_type_with_suffix):
 
+                    meta_url = idx + '/' + idx_type + '/_meta/_source'
+                    meta_response = Search.elastic_request(elastic_url, meta_url, is_post=False)
+
+                    try:
+                        elastic_meta = json.loads(meta_response.content.decode("utf-8"))
+                        label = elastic_meta['label']
+                    except:
+                        label = "UD-" + idx_type
+
+                    idx_type_dict['UD-' + idx_type.upper()] = {'label': label, 'type': idx_type}
+
+        if new_upload_file is not None:
+            idx_type = new_upload_file
+            label = "UD-" + idx_type
             idx_type_dict['UD-' + idx_type.upper()] = {'label': label, 'type': idx_type}
 
         elastic_dict['CP_STATS_UD']['idx_type'] = idx_type_dict
         return elastic_dict
 
     @classmethod
-    def create_idx_type_model_permissions(cls, user, elastic_dict=None, indexKey=None, indexTypeKey=None):
-        '''Create the models for the uploaded index types , create new permission and assign the permission to user'''
+    def create_idx_type_model_permissions(cls, user, elastic_dict=None, indexKey=None, indexTypeKey=None, new_upload_file=None):  # @IgnorePep8
+        '''Create the models for the uploaded index types , create new permission and assign the permission to user
+        First we have to get the updated elastic settings with user uploaded index types.  We do that by quering the
+        elastic for         CP_STATS_UD index, but care should be taken that some of the models might have been deleted,
+        so we add to the settings only the models that have the content types.
 
+        '''
         try:
             if settings.INCLUDE_USER_UPLOADS is True and elastic_dict is None:
-                elastic_dict = cls.get_elastic_settings_with_user_uploads()
+                if new_upload_file is not None:
+                    elastic_dict = cls.get_elastic_settings_with_user_uploads(elastic_dict=elastic_dict, new_upload_file=new_upload_file)  # @IgnorePep8
+                else:
+                    new_upload_file = indexTypeKey.split("UD-", 1)[1].lower()
+                    elastic_dict = cls.get_elastic_settings_with_user_uploads(elastic_dict=elastic_dict, new_upload_file=new_upload_file)  # @IgnorePep8
         except:
             pass
 
         if indexKey is None:
             indexKey = 'CP_STATS_UD'
-
         user_upload_dict = list(elastic_dict[indexKey]['idx_type'].keys())
 
         model_names_idx_types = []
