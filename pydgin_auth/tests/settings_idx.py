@@ -1,8 +1,9 @@
+from elastic.elastic_settings import ElasticSettings
 
 
 OVERRIDE_SETTINGS_CHICP = \
     {'default': {
-        'ELASTIC_URL': 'http://dev-elastic1:9200/',
+        'ELASTIC_URL': ElasticSettings.url(),
         'IDX': {
             'CP_STATS_UD': {
                 'name': 'cp:hg19_userdata_bed',
@@ -56,8 +57,9 @@ OVERRIDE_SETTINGS_CHICP = \
 
 
 OVERRIDE_SETTINGS_PYDGIN = \
-    {'default': {
-        'ELASTIC_URL': 'http://dev-elastic1:9200/',
+    {
+     'default': {
+        'ELASTIC_URL': ElasticSettings.url(),
         'IDX': {
             'GENE': {
                 'name': 'genes_hg38_v0.0.2',
@@ -99,6 +101,6 @@ OVERRIDE_SETTINGS_PYDGIN = \
         },
         'TEST': 'auto_tests',
         'REPOSITORY': 'my_backup',
-        'TEST_REPO_DIR': '/ipswich/data/pydgin/elastic/repos/test_snapshot/',
-    }
+        'TEST_REPO_DIR': '/tmp',
+     }
     }
