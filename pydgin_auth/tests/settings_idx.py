@@ -1,6 +1,5 @@
 from elastic.elastic_settings import ElasticSettings
 
-
 OVERRIDE_SETTINGS_CHICP = \
     {'default': {
         'ELASTIC_URL': ElasticSettings.url(),
