@@ -141,8 +141,11 @@ class ElasticPermissionModelFactory():
         '''
         if elastic_dict is None:
             elastic_dict = ElasticSettings.attrs().get('IDX')
+            
+            connection = connections[settings.AUTH_DB]
             if settings.INCLUDE_USER_UPLOADS is True:
-                elastic_dict = cls.get_elastic_settings_with_user_uploads(elastic_dict)
+                if "django_content_type" in connection.introspection.table_names():
+                    elastic_dict = cls.get_elastic_settings_with_user_uploads(elastic_dict)
 
         idx_type_keys_public = []
         idx_type_keys_private = []
