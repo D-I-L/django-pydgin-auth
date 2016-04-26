@@ -4,6 +4,8 @@
 
 {% block content %}
 
+	<div class="container-fluid">
+	<div class="row col-md-8">
 
 {% if success %}
   <h2>Welcome {{ user_name }}. Thank you for Registering</h2>
@@ -27,5 +29,8 @@
   
   <p><a href="/accounts/login/">Please Login</a></p>
 {% endif %}
+
+</div>
+</div>
 
 {% endblock %}
