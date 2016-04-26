@@ -105,8 +105,8 @@ div.terms_n_conditions {
 		
 	  		<div class="form-group form-group-md  row">
   			<label for="terms_n_conditions" class="control-label col-md-2"">Data Access Agreement:</label>
-  			<div id="terms_conditions_text" class="terms_n_conditions" rows="10" style="padding: 10px;">
-  			 {{ terms_n_condition|safe }} 
+  			<div id="terms_conditions_text" style="overflow: auto; height : 200px; background-color: #D3D3D3;padding:10px;	 ">
+  			 {% include "data_access_agreement.html" %}
   			</div>
 			</div>
 	  		

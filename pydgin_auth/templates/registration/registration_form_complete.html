@@ -2,6 +2,8 @@
 {% block title %}You are Registered{% endblock %}
 {% block content %}
 
+<div class="container-fluid">
+<div class="row col-md-4">
 
 {% if success_registration %}
   <h2>Welcome {{ user.username }}. Thank you for Registering</h2>
@@ -38,5 +40,8 @@
   
   <p><a href="/accounts/login/">Please Login</a></p>
 {% endif %}
+
+</div>
+</div>
 
 {% endblock %}
