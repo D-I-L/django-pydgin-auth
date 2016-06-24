@@ -70,10 +70,6 @@ def registration_complete(request):
 
 def register(request, extra_context=None):
     '''register a new user after agreeing to terms and condition'''
-    # read the terms and conditions file
-    curr_path = os.path.dirname(os.path.realpath(__file__))
-    with open(curr_path + "/templates/registration/IMB_TOC_draft.html", "r", encoding="utf-8") as myfile:
-        terms_n_condition_txt = myfile.read().replace('\n', '<br/>')
 
     try:
         base_html_dir = settings.BASE_HTML_DIR
@@ -127,7 +123,6 @@ def register(request, extra_context=None):
 
     token.update(csrf(request))
     token['form'] = form
-    token['terms_n_condition'] = terms_n_condition_txt
     token['basehtmldir'] = base_html_dir
 
     return render(request, 'registration/registration_form.html', token)

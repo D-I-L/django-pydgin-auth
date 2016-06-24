@@ -11,11 +11,11 @@ from django.contrib.auth import authenticate
 class PydginUserAuthenticationForm(AuthenticationForm):
     '''Overwriting the clean function to get lowercase username'''
     def clean(self):
-        username = self.cleaned_data.get('username').lower()
+        username = self.cleaned_data.get('username')
         password = self.cleaned_data.get('password')
 
         if username and password:
-            self.user_cache = authenticate(username=username,
+            self.user_cache = authenticate(username=username.lower(),
                                            password=password)
             if self.user_cache is None:
                 raise forms.ValidationError(
