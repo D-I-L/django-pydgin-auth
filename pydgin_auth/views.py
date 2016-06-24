@@ -142,7 +142,7 @@ def send_email_confirmation(request, new_user):
                 click the link given below within 48 hours:\n\nhttp://%s/accounts/user/activate/%s" % (username,
                                                                                                        host, host,
                                                                                                        token)
-    has_send = send_mail(email_subject, email_body, 'immunobase-feedback@cimr.cam.ac.uk', [email])
+    has_send = send_mail(email_subject, email_body,  settings.DEFAULT_FROM_EMAIL, [email])
     return has_send
 
 
