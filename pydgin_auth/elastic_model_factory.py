@@ -1,5 +1,5 @@
 '''
-Module to create elastic models dynamically
+Module to create elastic models dynamically my mark
 '''
 from django.contrib import admin
 from django.contrib.auth.models import Permission
@@ -141,7 +141,6 @@ class ElasticPermissionModelFactory():
         '''
         if elastic_dict is None:
             elastic_dict = ElasticSettings.attrs().get('IDX')
-            
             connection = connections[settings.AUTH_DB]
             if settings.INCLUDE_USER_UPLOADS is True:
                 if "django_content_type" in connection.introspection.table_names():
@@ -255,13 +254,18 @@ class ElasticPermissionModelFactory():
         elastic_url = ElasticSettings.url()
         url = idx + '/_mapping'
         response = Search.elastic_request(elastic_url, url, is_post=False)
-
+        ''' why don't we use Search.get_mapping ? I guess it's not a class method'''
+        #logger.debug(response.json())
         if "error" in response.json():
             logger.warn(response.json())
             return None
 
         # get idx_types from _mapping
         elastic_mapping = json.loads(response.content.decode("utf-8"))
+        # here if we use aliasing then idx can be different
+        # this causes problems as it's effectively hardcoded
+       # this should fix to handle things where aliases are deployed
+        idx = list(elastic_mapping.keys())[0]
         idx_types = list(elastic_mapping[idx]['mappings'].keys())
 
         if elastic_dict is None:
@@ -305,6 +309,7 @@ class ElasticPermissionModelFactory():
         so we add to the settings only the models that have the content types.
 
         '''
+        #logger.debug("indexKey param is " + indexKey)
         try:
             if settings.INCLUDE_USER_UPLOADS is True and elastic_dict is None:
                 if new_upload_file is not None:
@@ -314,7 +319,7 @@ class ElasticPermissionModelFactory():
                     elastic_dict = cls.get_elastic_settings_with_user_uploads(elastic_dict=elastic_dict, new_upload_file=new_upload_file)  # @IgnorePep8
         except:
             pass
-
+        #logger.debug(elastic_dict)
         if indexKey is None:
             indexKey = 'CP_STATS_UD'
         user_upload_dict = list(elastic_dict[indexKey]['idx_type'].keys())
